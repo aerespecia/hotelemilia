@@ -479,7 +479,7 @@ $(function() {
                         @elseif($transaction->status == 999)
                           <span class="label label-dark">Send Bill</span>
                         @endif
-
+ 
                         @if($transaction->guaranteed == 1)
                           <span class="label label-warning">Guaranteed</span>
                         @elseif($transaction->guaranteed == 2)
@@ -516,8 +516,8 @@ $(function() {
             <button class="btn btn-default btn-embossed" data-toggle="modal" id="transWithHolding" value="{{$transactionId}}" data-target="#modal-manage-withholdingTax">Withholding Tax</button>
            </div>
            </div>
-           
-            
+               
+             
             <div class="row">
                 <div class="col-md-6">
                       <div class="panel" id="registration-info">
@@ -767,7 +767,7 @@ $(function() {
                               }
                                   
                             }
-                      
+                       
                         
                             amountTotal+=data.amendments[i]["FinalRoomRate"]*diffDays2;
                             chargesTotal+=data.amendments[i]["FinalRoomRate"]*diffDays2;          
@@ -1011,7 +1011,7 @@ $(function() {
 
                     $("#roomFinalRoomRate").val(data.room[0]["FinalRoomRate"]);
                     $("#roomDiscount").val(data.room[0]["discountId"]);
-                    $('#roomDiscount').select2().trigger('change');
+                    $("#roomDiscount").select2();
 
                   //  $("#roomDiscount").val(3);
 
@@ -2621,7 +2621,7 @@ $(function() {
                         <label>Discount Type</label>
                       
                           <select id="roomDiscount" name="" class="form-control">
-                          <option value="1">----SELECT----</option>
+                          <option value="0">----SELECT----</option>
                                 @foreach($discountDetails as $dd)
                                   <option value="{{$dd->id}}">{{$dd->name.' ('.($dd->discountValue*100).' %)'}}</option>
                                 @endforeach
@@ -3397,7 +3397,7 @@ $(function() {
            "bLengthChange": false,
        
         
-        ajax: '{!! route('frontdesk.dataTablesGuestList') !!}',
+        ajax: "{!! route('frontdesk.dataTablesGuestList') !!}",
         columns: [
             { data: 'name', name: 'name' },
             { data: 'contactNo' , name: 'contactNo' },
@@ -4190,7 +4190,7 @@ $(function() {
                        ?>
 
                       @if($sales)
-                       @foreach($sales as $s)
+                       @foreach($rooms as $r)
                        <?php $roomsCounting++; ?>
                        @endforeach
                        @endif
@@ -4202,12 +4202,17 @@ $(function() {
 
                     @if($rooms and $sales)
 
-                        @foreach($sales as $r)
+                        @foreach($rooms as $r)
                         <tr>
                           <td>{{$r->roomName}}</td>
                     
-                      <?php $grandTotal = ($r->totalBill + $r->shuttleService) - $r->totalChargeDiscount;
-                            $paymentsReceived = $r->creditCharges;
+                      <?php 
+                        $datediff = strtotime($r->depatureDate) - strtotime($r->arrivalDate);
+                        $days = floor($datediff / (60 * 60 * 24));
+                      $grandTotal = $r->FinalRoomRate*$days;
+                            $paymentsReceived = 0;
+                            $guestChargeTotal = 0;
+                            $guestChargeDiscount = 0;
                        ?>
 
                        @foreach($downpayments as $dp)
@@ -4216,10 +4221,23 @@ $(function() {
                         @endif
                        @endforeach
 
+                        @foreach($guestCharges as $gc)
+                          @if($gc->reserveid == $r->reserveid)
+                            <?php $guestChargeTotal+=$gc->price;
+                                  $guestChargeDiscount+=$gc->lessDiscount;
+                            ?>
+                          @endif
+                        @endforeach
+
+                        
+
+                        <?php $guestChargeTotal -=$guestChargeDiscount;
+                              $roomBalance = ($guestChargeTotal+$ammendTotal+$grandTotal);
+                        ?>
                     
-                          <td style="text-align:right;">{{number_format($grandTotal - $paymentsReceived - ($withHolding/$roomsCounting),2)}}</td>
+                          <td style="text-align:right;">{{number_format($roomBalance - ($withHolding/$roomsCounting)-$paymentsReceived,2)}}</td>
                           
-                              <?php $balanceTotal+=$grandTotal-$paymentsReceived; ?>
+                              <?php $balanceTotal+=$roomBalance-$paymentsReceived; ?>
                       
                           <td>
                             <input type="text" id="numbersonly" class="form-control" name='payment[{{$r->reserveid}}]' placeholder="0,000.00" autocomplete="off" />
