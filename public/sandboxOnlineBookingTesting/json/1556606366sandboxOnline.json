@@ -1,0 +1,28 @@
+POST /api-hesm/save-booking HTTP/1.1
+Accept:          */*
+Accept-Encoding: gzip, deflate
+Cache-Control:   no-cache
+Connection:      keep-alive
+Content-Length:  451
+Content-Type:    application/json
+Cookie:          laravel_session=eyJpdiI6IkQ3V0d3VU44RlNwSDlCUitjTW0rd2c9PSIsInZhbHVlIjoiYnFFUFdXTkdtUUMzeEhKbXdVNXh1dTRReFVaWU03V0RRUGNjN3htM2VlZUxLMUFYbzBXU1wvcUNjZzhTN3ZreUczZnJFeTdnb2hcL3NibGlPalpLWDZ3QT09IiwibWFjIjoiOTQ3ZDAwZTk2MmM0NWNmMjMzMzlmNTdjZjgxZjRlYmVmMWFmMWFjODVkMGUyZWRiNGNjNDQ4YjQxMjI2MjE3MyJ9
+Host:            120.28.196.249:8000
+Postman-Token:   4b9ae2a2-9519-4ca4-bac8-44c482f17656
+User-Agent:      PostmanRuntime/7.11.0
+
+{
+"accessId" : "hotelEmiliaWeb",
+"config" : "2",
+  "checkInDate" : "2019-01-02",
+  "checkOutDate" : "2019-01-03",
+  "bpFirstName" : "John",
+  "bpLastName" : "Doe",
+  "bpContactNo" : "09392869413",
+  "bpEmail" : "johndoe@gmail.com",
+  "bookingReferenceNo" : "0216544889324675",
+  "paypalReference" : "PL125479325412",
+  "totalAmount" : "13455.00",
+  "roomTypeIds" : ["1","2"],
+  "roomTypesCount" : ["2","1"],
+  "roomTypesRate" : ["2047.50","2632.50"]
+}

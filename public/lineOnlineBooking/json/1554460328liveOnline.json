@@ -1,0 +1,7 @@
+POST /api-hesm/save-booking HTTP/1.1
+Accept:         */*
+Content-Length: 393
+Content-Type:   application/json
+Host:           120.28.196.249:8000
+
+{"accessId":"hotelEmiliaWeb","config":"1","checkInDate":"2019-03-01","checkOutDate":"2019-03-14","bpFirstName":"Francis","bpLastName":"Adan","bpContactNo":"+639394367248","bpEmail":"Fransadan@gmail.com","bookingReferenceNo":"550523","paypalReference":"PAYID-LR3XSZY6YK37023BS922463D","totalAmount":"57330","roomTypeIds":["1","2"],"roomTypesCount":["1","1"],"roomTypesRate":["2047.5","2635.5"]}

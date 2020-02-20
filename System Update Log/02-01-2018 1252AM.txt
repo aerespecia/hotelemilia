@@ -1,0 +1,11 @@
+System Update as of 02/01/2018 12:48 AM
+
+- (Frontdesk) Fixed Room Ammendment arrival date anomaly
+- (Admin) Changed Time Shift in Daily Shift Report (6AM-2PM, 2PM-10PM, 10PM-6AM)
+- (Admin) Shift Daily Report: Will only show received payments within the selected date and shift time.
+
+
+*Please double check on changes. Reach me thru Telegram or Phone (09392869413) for concerns. Thanks
+
+*Please close after reading.
+		

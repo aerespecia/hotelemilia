@@ -1,0 +1,7 @@
+POST /api-hesm/save-booking HTTP/1.1
+Accept:         */*
+Content-Length: 380
+Content-Type:   application/json
+Host:           120.28.196.249:8080
+
+{"accessId":"hotelEmiliaWeb","config":"1","checkInDate":"2019-07-25","checkOutDate":"2019-07-28","bpFirstName":"CHARITA","bpLastName":"PINION","bpContactNo":"09184885221","bpEmail":"beegeecasc@gmail.com","bookingReferenceNo":"769890","paypalReference":"PAYID-LU4RL4Y6E406406XF0931538","totalAmount":"7897.50","roomTypeIds":["2"],"roomTypesCount":["1"],"roomTypesRate":["2632.50"]}

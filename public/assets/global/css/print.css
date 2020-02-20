@@ -1,0 +1,74 @@
+ @import "http://fonts.googleapis.com/css?family=Lato:300,400,700,900";
+@import "http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700";
+@import "icons/font-awesome/font-awesome.css";
+@import "icons/line-icons/line-icons.css";
+@import "icons/line-icons/simple-line-icons.css";
+@import "icons/rounded/style.css";
+@import "icons/octicons/octicons.css";
+@import "icons/weather/css/weather-icons.min.css";
+    
+    body {
+  background: rgb(204,204,204);
+font-family: 'Lato', 'Open Sans', Helvetica, sans-serif !important;
+}
+page {
+  background: white;
+  display: block;
+  height: auto;
+  width: 21cm;
+  margin: 0 auto;
+  padding: 20px;
+  margin-bottom: 0.5cm;
+  box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+}
+
+.m-l-20{
+    margin-left:20px;
+}
+
+.f-14{
+    font-size:14pt;
+}
+
+.f-12{
+    font-size:12pt;
+}
+
+
+.f-11{
+    font-size:10pt;
+}
+
+.f-10{
+    font-size:9pt;
+}
+
+.cell-style{
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+
+p-20{
+    padding: 20px;
+}
+
+page[size="A4"] {  
+  width: 215.9mm;
+  height: auto; 
+}
+
+@media print {
+  body, page {
+    margin: 0;
+    box-shadow: 0;
+  }                 
+                           
+   table { page-break-inside:auto; }
+   tr    { page-break-inside:avoid; page-break-after:auto; }
+
+    #header-1{
+        visibility:hidden;
+    }
+}
