@@ -2649,44 +2649,39 @@ public function guestRegistration(Request $req){
 
 
 
-  $user=Auth::user();
-  $code = $req->get('reservID');
-  $client = 'NONE';
-  $guests = NULL;
-  $rooms = NULL;
+    $user=Auth::user();
+    $code = $req->get('reservID');
+    $client = 'NONE';
+    $guests = NULL;
+    $rooms = NULL;
   $reservArriv = NULL;
   $reservDepart = NULL;
-  $reservCheckIn = NULL;
-  $reservCheckOut = NULL;
-  $reservBillArrange = NULL;
-  $reservBillNote = NULL;
+    $reservCheckIn = NULL;
+       $reservCheckOut = NULL;
+       $reservBillArrange = NULL;
+       $reservBillNote = NULL;
 
 
-  $transactionId = NULL;
-  $registExist = false;
-  $downpayments = NULL;
-  $notes = NULL;
-  $sales = NULL;
+    $transactionId = NULL;
+    $registExist = false;
+    $downpayments = NULL;
+    $notes = NULL;
+    $sales = NULL;
+    
+    $roomsToAdd = DB::table('room_infos')
+                ->join('room_types','room_infos.type','=','room_types.id')
+                ->select([
+                    'room_infos.roomName',
+                    'room_infos.roomNo',
+                    'room_infos.type',
+                    'room_infos.id',
+                    'room_types.name as roomType',
+                    'room_types.room_rate as rate',
+                ])
+                ->get();
 
-  $roomsToAdd = DB::table('room_infos')
-  ->join('room_types','room_infos.type','=','room_types.id')
-  ->select([
-    'room_infos.roomName',
-    'room_infos.roomNo',
-    'room_infos.type',
-    'room_infos.id',
-    'room_types.name as roomType',
-    'room_types.room_rate as rate',
-])
-  ->get();
-
-  $bookedRooms = [0];
-$transaction = null;
-$instiD = 0;
-$clientD = 0;
-
-  if($code){
-
+    if($code){
+      
 
     $registExist = true;
     $transaction = DB::table('transactions')->where('code',$code)->first();
@@ -2695,228 +2690,332 @@ $clientD = 0;
 
     if(!$transaction && $roomcharges){
         $transaction = DB::table('room_charges as rc')
-        ->join('guest_reservations as gr','gr.id','=','rc.guestReservationId')
-        ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
-        ->join('transactions as t','t.id','=','rr.transactionId')
-        ->where('rc.os_id',$code)
-        ->select([
-            't.id',
-            't.specialRequestNotes',
-            't.clientId',
-            't.institutionId',
-            't.status',
-            't.code',
-            't.guaranteed',
-            't.withHoldingTax',
-        ])
-        ->first();
+                        ->join('guest_reservations as gr','gr.id','=','rc.guestReservationId')
+                        ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
+                        ->join('transactions as t','t.id','=','rr.transactionId')
+                        ->where('rc.os_id',$code)
+                        ->select([
+                            't.id',
+                            't.specialRequestNotes',
+                            't.clientId',
+                            't.institutionId',
+                            't.status',
+                            't.code',
+                            't.guaranteed',
+                            't.withHoldingTax',
+                        ])
+                        ->first();
 
         $code = $transaction->code;
     }
 
-
+    
     if(!$transaction && $folio){
         $transaction = DB::table('guest_reservations as gr')
-        ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
-        ->join('transactions as t','t.id','=','rr.transactionId')
-        ->where('gr.folioNos',$code)
-        ->select([
-            't.id',
-            't.specialRequestNotes',
-            't.clientId',
-            't.institutionId',
-            't.status',
-            't.code',
-            't.guaranteed',
-            't.withHoldingTax',
-        ])
-        ->first();
+                        ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
+                        ->join('transactions as t','t.id','=','rr.transactionId')
+                        ->where('gr.folioNos',$code)
+                        ->select([
+                            't.id',
+                            't.specialRequestNotes',
+                            't.clientId',
+                            't.institutionId',
+                            't.status',
+                            't.code',
+                            't.guaranteed',
+                            't.withHoldingTax',
+                        ])
+                        ->first();
 
         $code = $transaction->code;
     }
 
     $notes = $transaction->specialRequestNotes;
     $transactionId = $transaction->id;
-
+        
     $client = $transaction->clientId;
 
     $clientD = Client::findOrFail($client);
 
     $instiD = Institution::findOrFail($transaction->institutionId);
 
-    $guests = DB::table('guests')
-    ->join('guest_reservations','guests.id','=','guest_reservations.guestId')
-    ->join('room_reservations','guest_reservations.roomReservationId','=','room_reservations.id')
-    ->join('room_infos','room_reservations.roomId','=','room_infos.id')
-    ->join('transactions','transactions.id','=','room_reservations.transactionId')
-    ->where('transactions.id','=',$transactionId)
-    ->where('guest_reservations.status','=',1)
-    ->orWhere('guest_reservations.status','=',2)
-    ->orWhere('guest_reservations.status','=',4)
-    ->select(
-        [
-            'guests.id',
-            'guests.firstName',
-            'guests.middleName',
-            'guests.familyName',
-            'guests.houseNo',
-            'guests.brgy',
-            'guests.city',
-            'guests.country',
-            'guests.postalCode',
-            'guests.nationality',
-            'guests.contactNo',
-            'guests.email',
-            'guests.dob',
-            'guests.designation',
-            'guests.passNo',
-            'guests.passExpiry',
-            'guests.passIssue',
-            'guests.otherId',
-            'guests.account_id',
-            'room_reservations.roomId',
-            'room_infos.roomName',
-            'guest_reservations.id as grId',
-            'guest_reservations.roomReservationId',
-            'guest_reservations.status'
-        ]
-    )
-    ->get();
-
-
-    $rooms = DB::table('room_infos')
-    ->join('room_types','room_types.id','=','room_infos.type')
-    ->join('room_reservations','room_infos.id','=','room_reservations.roomId')
-    ->join('discount_details as dd','dd.id','=','room_reservations.discountId')
-    ->join('transactions','transactions.id','=','room_reservations.transactionId')
-    ->where('transactions.id','=',$transactionId)
-    ->select(
-        [
-            'room_infos.id',
-            'room_reservations.id as reserveid',
-            'dd.discountValue',
-            'dd.name as discountName',
-            'dd.type as discountType',
-            'room_infos.roomName',
-            'room_types.name as roomType',
-            'room_types.room_rate as roomRate',
-            'room_reservations.FinalRoomRate',
-        ]
-    )
-    ->get();
-
-
-    $sales = DB::table('transactions')
-    ->join('room_reservations', 'room_reservations.transactionId','=', 'transactions.id')
-    ->join('room_infos', 'room_infos.id', '=', 'room_reservations.roomId')
-    ->join('room_types', 'room_types.id', '=', 'room_infos.type')
-    ->leftjoin('room_amendments',function($join)
-    {
-        $join->on('room_amendments.roomReservationId', '=', 'room_reservations.id')->where('room_amendments.status','=','1');
-    })
-    ->join('guest_reservations', 'guest_reservations.roomReservationId', '=', 'room_reservations.id')
-    ->leftjoin('room_charges', 'room_charges.guestReservationId', '=', 'guest_reservations.id')
-    ->where('transactions.id','=',$transactionId)
-    ->groupby('room_reservations.id')
-    ->orderby('transactions.updated_at')
-    ->select(
-        [
-            'transactions.updated_at as reservationDate',
-            'transactions.code',
-            'room_infos.roomName',
-            'room_reservations.id as reserveid',
-            DB::raw("sum(if(room_charges.chargeType = 2, room_charges.price, 0)) as creditCharges"),
-            DB::raw("concat(DATE_FORMAT(room_reservations.initialArrivalDate,'%b %d'), '-', DATE_FORMAT(room_reservations.initialDepartureDate,'%b %d %Y')) as reservationPeriod"),
-            DB::raw("DATEDIFF(room_reservations.initialDepartureDate, room_reservations.initialArrivalDate) as days"),
-
-            'room_reservations.FinalRoomRate as roomRate',
-            DB::raw("sum(if(room_charges.type = 1, room_charges.price, 0)) as fnb"),
-            DB::raw("sum(if(room_charges.type = 2, room_charges.price, 0)) as roomService"),
-            DB::raw("sum(if(room_charges.type = 3, room_charges.price, 0)) as miniBar"),
-
-            DB::raw("case transactions.status
-                when 100 then 'Fully Paid'
-                when 1000 then 'Partial Paid'
-                end as statusTransactions"),
-
-            DB::raw("sum(if(room_charges.type = 1, room_charges.lessDiscount, 0)) as fnbDiscount"),
-            DB::raw("sum(if(room_charges.type = 2, room_charges.lessDiscount, 0)) as roomServiceDiscount"),
-            DB::raw("sum(if(room_charges.type = 3, room_charges.lessDiscount, 0)) as miniBarDiscount"),
-
-            DB::raw("sum(if(room_charges.type <>4, room_charges.lessDiscount, 0)) as totalChargeDiscount"),
-
-            DB::raw("sum(if(room_charges.type = 4, room_charges.price, 0)) as shuttleService"),
-
-            DB::raw("if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) as ammendCharge"),
-
-
-            DB::raw("(DATEDIFF(room_reservations.depatureDate, room_reservations.arrivalDate) * room_reservations.FinalRoomRate) + if((DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) is not NULL, if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate),0) + sum(if(room_charges.price is not null and room_charges.type <> 4, room_charges.price, 0)) as totalBill"),
-
-            DB::raw('((((DATEDIFF(room_reservations.depatureDate, room_reservations.arrivalDate) * room_reservations.FinalRoomRate) + if((DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) is not NULL,if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate),0) + sum(if(room_charges.price is not null and room_charges.type <> 4, room_charges.price, 0)))/1.12) * .10) as serviceCharge'),
-        ]
-    )->get();
-
-    $getDates = DB::table('room_reservations as rr')->where('rr.transactionId','=',$transactionId)->first();
-
-    $reservArriv = $getDates->initialArrivalDate;
-    $reservDepart = $getDates->depatureDate;
-    $reservCheckIn = $getDates->checkInTime;
-    $reservCheckOut = $getDates->checkOutTime;
-    $reservBillArrange = $getDates->billingType;
-    $reservBillNote = $getDates->billingNote;
-
-
-
-    $bookedRooms=[0];
-
-    $downpayments = DB::table('downpayments as dp')
-    ->join('users as u','u.id','=','dp.user_id')
-    ->where('dp.transactionId','=',$transactionId)
-    ->select([
-        'dp.amount',
-        DB::raw('
-            (CASE 
-            WHEN dp.paidThru = 1 THEN "Cash" 
-            WHEN dp.paidThru = 2 THEN "Credit Card"
-            WHEN dp.paidThru = 3 THEN "Cheque"  
-            END) AS paidThru'
-        ),
-        'dp.notes',
-        'dp.created_at',
-        'u.firstName',
-        'dp.roomReservationId',
-        'u.lastName',
-
-    ])
-    ->get();
-
+    $ammendTotal = 0;
+    $guestCharges = 0;
     
+    $guests = DB::table('guests')
+                    ->join('guest_reservations','guests.id','=','guest_reservations.guestId')
+                    ->join('room_reservations','guest_reservations.roomReservationId','=','room_reservations.id')
+                    ->join('room_infos','room_reservations.roomId','=','room_infos.id')
+                    ->join('transactions','transactions.id','=','room_reservations.transactionId')
+                    ->where('transactions.id','=',$transactionId)
+                    ->where('guest_reservations.status','=',1)
+                    ->orWhere('guest_reservations.status','=',2)
+                    ->orWhere('guest_reservations.status','=',4)
+                    ->select(
+                            [
+                            'guests.id',
+                            'guests.firstName',
+                            'guests.middleName',
+                            'guests.familyName',
+                            'guests.houseNo',
+                            'guests.brgy',
+                            'guests.city',
+                            'guests.country',
+                            'guests.postalCode',
+                            'guests.nationality',
+                            'guests.contactNo',
+                            'guests.email',
+                            'guests.dob',
+                            'guests.designation',
+                            'guests.passNo',
+                            'guests.passExpiry',
+                            'guests.passIssue',
+                            'guests.otherId',
+                            'guests.account_id',
+                            'room_reservations.roomId',
+                            'room_infos.roomName',
+                            'guest_reservations.id as grId',
+                            'guest_reservations.roomReservationId',
+                            'guest_reservations.status'
+                            ]
+                            )
+                    ->get();
+        
+        $amendments = DB::table('room_amendments as ra')
+                    ->where('ra.transactionId','=',$transactionId)
+                    ->join('discount_details as dd','ra.discountId','=','dd.id')
+                    ->join('room_infos as r','r.id','=','ra.roomId')
+                    ->join('room_types as rt','rt.id','=','r.type')
+                    ->select([
+                        'ra.FinalRoomRate',
+                        'ra.fullRackRateEdit',
 
-    foreach($rooms as $r){
-        if(!in_array($r->roomName,$bookedRooms))
-            array_push($bookedRooms, $r->roomName);
+                        'ra.noOfDays as amendDays',
+                        'ra.id as amendId',
+                        'ra.created_at as amendDate',
+                        'dd.name as discountNameAmend',
+                        'dd.discountValue',
+                        'dd.type as discountType',
+                        'dd.id as idAmend',
+                        'ra.arrivalDate as amendArriv',
+                        'ra.depatureDate as amendDepart',
+                        'dd.discountValue as discountValueAmend',
+                        'ra.roomTypeBill',
+                        'ra.finalRoomNo',
+                        'rt.room_rate as amendRate',
+                        'r.roomName as amendRoomName',
+                        'rt.name as amendRoomType',
+                    ])->get();
+    
+    foreach($amendments as $a){
+        $datediff2 = strtotime($a->amendDepart) - strtotime($a->amendArriv);
+        $days2 = floor($datediff2 / (60 * 60 * 24));
+        $ammendTotal+=$a->FinalRoomRate*$days2;
     }
 
+    $guestCharges = DB::table('room_charges as rc')
+                    ->join('guest_reservations as gr','gr.id','=','rc.guestReservationId')
+                    ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
+                    ->join('guests as g','g.id','=','guestId')
+                    ->where('rr.transactionId','=',$transactionId)
+                    ->select([
+                            'rc.id as rcID',
+                            'rc.item_name',
+                            'rc.created_at as chargeCreated',
+                            'rc.price',
+                            'rc.os_id',
+                            'rc.account_type',
+                            'rc.lessDiscount',
+                            'rc.type',
+                            'rr.id as reserveid',
+                            DB::raw("concat(g.firstName,' ',g.familyName) as guestName"),
+                        ])
+                    ->get();
+        
+
+        $rooms = DB::table('room_infos')
+                    ->join('room_types','room_types.id','=','room_infos.type')
+                    ->join('room_reservations','room_infos.id','=','room_reservations.roomId')
+                    ->join('discount_details as dd','dd.id','=','room_reservations.discountId')
+                    ->join('transactions','transactions.id','=','room_reservations.transactionId')
+                    ->where('transactions.id','=',$transactionId)
+                    ->select(
+                            [
+                                'room_infos.id',
+                                'room_reservations.id as reserveid',
+                                'dd.discountValue',
+                                'dd.name as discountName',
+                                'dd.type as discountType',
+                                'room_infos.roomName',
+                                'room_types.name as roomType',
+                                'room_types.room_rate as roomRate',
+                                'room_reservations.FinalRoomRate',
+                                'room_reservations.arrivalDate',
+                                'room_reservations.depatureDate',
+                                'room_reservations.noOfdays',
+                            ]
+                            )
+                    ->get();
+    
+    $amendments = DB::table('room_amendments as ra')
+                    ->where('ra.transactionId','=',$transactionId)
+                    ->join('discount_details as dd','ra.discountId','=','dd.id')
+                    ->join('room_infos as r','r.id','=','ra.roomId')
+                    ->join('room_types as rt','rt.id','=','r.type')
+                    ->select([
+                        'ra.FinalRoomRate',
+                        'ra.fullRackRateEdit',
+
+                        'ra.noOfDays as amendDays',
+                        'ra.id as amendId',
+                        'ra.created_at as amendDate',
+                        'dd.name as discountNameAmend',
+                        'dd.discountValue',
+                        'dd.type as discountType',
+                        'dd.id as idAmend',
+                        'ra.arrivalDate as amendArriv',
+                        'ra.depatureDate as amendDepart',
+                        'dd.discountValue as discountValueAmend',
+                        'ra.roomTypeBill',
+                        'ra.finalRoomNo',
+                        'rt.room_rate as amendRate',
+                        'r.roomName as amendRoomName',
+                        'rt.name as amendRoomType',
+                    ])->get();
+    
+    $guestCharges = DB::table('room_charges as rc')
+                    ->join('guest_reservations as gr','gr.id','=','rc.guestReservationId')
+                    ->join('room_reservations as rr','rr.id','=','gr.roomReservationId')
+                    ->join('guests as g','g.id','=','guestId')
+                    ->where('rr.transactionId','=',$transactionId)
+                    ->select([
+                            'rc.id as rcID',
+                            'rc.item_name',
+                            'rr.id as reserveid',
+                            'rc.created_at as chargeCreated',
+                            'rc.price',
+                            'rc.os_id',
+                            'rc.account_type',
+                            'rc.lessDiscount',
+                            'rc.type',
+                            DB::raw("concat(g.firstName,' ',g.familyName) as guestName"),
+                        ])
+                    ->get();
+    
+
+    foreach($amendments as $a){
+        $datediff2 = strtotime($a->amendDepart) - strtotime($a->amendArriv);
+        $days2 = floor($datediff2 / (60 * 60 * 24));
+        $ammendTotal+=$a->FinalRoomRate*$days2;
+    }
+
+
+          $sales = DB::table('transactions')
+            ->join('room_reservations', 'room_reservations.transactionId','=', 'transactions.id')
+            ->join('room_infos', 'room_infos.id', '=', 'room_reservations.roomId')
+            ->join('room_types', 'room_types.id', '=', 'room_infos.type')
+            ->leftjoin('room_amendments',function($join)
+                {
+                    $join->on('room_amendments.roomReservationId', '=', 'room_reservations.id')->where('room_amendments.status','=','1');
+                })
+            ->join('guest_reservations', 'guest_reservations.roomReservationId', '=', 'room_reservations.id')
+            ->leftjoin('room_charges', 'room_charges.guestReservationId', '=', 'guest_reservations.id')
+            ->where('transactions.id','=',$transactionId)
+            ->groupby('room_reservations.id')
+            ->orderby('transactions.updated_at')
+            ->select(
+                [
+                    'transactions.updated_at as reservationDate',
+                    'transactions.code',
+                    'room_infos.roomName',
+                    'room_reservations.id as reserveid',
+                    DB::raw("sum(if(room_charges.chargeType = 2, room_charges.price, 0)) as creditCharges"),
+                    DB::raw("concat(DATE_FORMAT(room_reservations.initialArrivalDate,'%b %d'), '-', DATE_FORMAT(room_reservations.initialDepartureDate,'%b %d %Y')) as reservationPeriod"),
+                    DB::raw("DATEDIFF(room_reservations.initialDepartureDate, room_reservations.initialArrivalDate) as days"),
+                    
+                    'room_reservations.FinalRoomRate as roomRate',
+                    DB::raw("sum(if(room_charges.type = 1, room_charges.price, 0)) as fnb"),
+                    DB::raw("sum(if(room_charges.type = 2, room_charges.price, 0)) as roomService"),
+                    DB::raw("sum(if(room_charges.type = 3, room_charges.price, 0)) as miniBar"),
+
+                    DB::raw("case transactions.status
+                        when 100 then 'Fully Paid'
+                        when 1000 then 'Partial Paid'
+                        end as statusTransactions"),
+
+                    DB::raw("sum(if(room_charges.type = 1, room_charges.lessDiscount, 0)) as fnbDiscount"),
+                    DB::raw("sum(if(room_charges.type = 2, room_charges.lessDiscount, 0)) as roomServiceDiscount"),
+                    DB::raw("sum(if(room_charges.type = 3, room_charges.lessDiscount, 0)) as miniBarDiscount"),
+
+                    DB::raw("sum(if(room_charges.type <>4, room_charges.lessDiscount, 0)) as totalChargeDiscount"),
+
+                    DB::raw("sum(if(room_charges.type = 4, room_charges.price, 0)) as shuttleService"),
+
+                    DB::raw("if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) as ammendCharge"),
+                    
+
+                    DB::raw("(DATEDIFF(room_reservations.depatureDate, room_reservations.arrivalDate) * room_reservations.FinalRoomRate) + if((DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) is not NULL, if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate),0) + sum(if(room_charges.price is not null and room_charges.type <> 4, room_charges.price, 0)) as totalBill"),
+
+                    DB::raw('((((DATEDIFF(room_reservations.depatureDate, room_reservations.arrivalDate) * room_reservations.FinalRoomRate) + if((DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate) is not NULL,if(count(Distinct room_amendments.id)>1, sum(DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate), DATEDIFF(room_amendments.depatureDate, room_amendments.arrivalDate) * room_amendments.FinalRoomRate),0) + sum(if(room_charges.price is not null and room_charges.type <> 4, room_charges.price, 0)))/1.12) * .10) as serviceCharge'),
+                ]
+            )->get();
+      
+       $getDates = DB::table('room_reservations as rr')->where('rr.transactionId','=',$transactionId)->first();
+
+       $reservArriv = $getDates->arrivalDate;
+       $reservDepart = $getDates->depatureDate;
+       $reservCheckIn = $getDates->checkInTime;
+       $reservCheckOut = $getDates->checkOutTime;
+       $reservBillArrange = $getDates->billingType;
+       $reservBillNote = $getDates->billingNote;
+
+      
    
+        $bookedRooms=[];
 
+        $downpayments = DB::table('downpayments as dp')
+                            ->join('users as u','u.id','=','dp.user_id')
+                            ->where('dp.transactionId','=',$transactionId)
+                            ->select([
+                                    'dp.amount',
+                                      DB::raw('
+                                        (CASE 
+                                        WHEN dp.paidThru = 1 THEN "Cash" 
+                                        WHEN dp.paidThru = 2 THEN "Credit Card"
+                                        WHEN dp.paidThru = 3 THEN "Cheque"
+                                        WHEN dp.paidThru = 4 THEN "Bank Deposit"  
+                                        END) AS paidThru'
+                                    ),
+                                    'dp.notes',
+                                    'dp.created_at',
+                                    'u.firstName',
+                                    'dp.roomReservationId',
+                                    'u.lastName',
+                          
+                                ])
+                            ->get();
+        
+        foreach($rooms as $r){
+            if(!in_array($r->roomName,$bookedRooms))
+            array_push($bookedRooms, $r->roomName);
+        }
+    
+    }
+    $discountDetails = DB::table('discount_details')->get();
+    
 
- 
-}
-
-
-$discountDetails = DB::table('discount_details')->get();
-
-
-    //    $activeReservations = DB::
-
-        //code goes here...
-return view('frontdesk.guest-registration',compact('user','notes','client','reservArriv','reservDepart','reservCheckIn','reservCheckOut','reservBillArrange','reservBillNote','downpayments','guests','rooms','roomsToAdd','bookedRooms','registExist','code','transaction','sales','transactionId','instiD','discountDetails','clientD'));
-
-
-    //    return $guests;
-
+    
+    
+//    $activeReservations = DB::
+    
+    //code goes here...
+  return view('frontdesk.guest-registration',compact('user','notes','client','reservArriv','reservDepart','reservCheckIn','reservCheckOut','reservBillArrange','reservBillNote','downpayments','guests','rooms','roomsToAdd','bookedRooms','registExist','code','transaction','sales','transactionId','instiD','clientD','discountDetails','ammendTotal','guestCharges'));
+    
+    
+//    return $guests;
+    
 //        return $rooms;
-
+         
 }
 
  public function updateCheckOutTime(Request $req){
