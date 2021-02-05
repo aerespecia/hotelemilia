@@ -99,9 +99,9 @@
           <div class="form-group">
             <label class="form-label">Arrival and Departure</label>
             <div class="input-daterange b-datepicker input-group" id="datepicker">
-              <input type="text" class="input-sm form-control" id="arrival2" name="arrivalDate" placeholder="Arrival" autocomplete="off" />
+              <input type="text" class="input-sm form-control" id="arrival2" name="arrivalDate" placeholder="Arrival" autocomplete="off" onchange="autoRoomAvailabilityFilter()"/>
               <span class="input-group-addon">to</span>
-              <input type="text" class="input-sm form-control" id="departure2" name="departureDate" placeholder="Departure" autocomplete="off"/>
+              <input type="text" class="input-sm form-control" id="departure2" name="departureDate" placeholder="Departure" autocomplete="off" onchange="autoRoomAvailabilityFilter()"/>
             </div>                                     
           </div>
         </div>
@@ -2028,6 +2028,123 @@ function selectDiscount(x){
 
   });
 }
+
+function autoRoomAvailabilityFilter() {
+
+  var dates1 = { arrival: $('#arrival2').val(),
+          departure: $('#departure2').val(),
+        };
+        $("#depart-rooms > tbody").empty();
+        $("#arrival-rooms > tbody").empty();
+
+        $.get('{{route("frontdesk.checkRoomAvailability")}}',function(data){
+         $.ajax({
+           type:"GET",
+           url: "{{route('frontdesk.checkRoomAvailability')}}",
+           data: dates1,
+
+           success: function (data){
+             console.log(data);
+
+                  //    
+
+                  for(var i=1;i<=42;i++){
+                   var id = "#"+i;
+                   if($.inArray(i,data.results) > -1)                          
+                     $(id).hide();
+                   else
+                     $(id).show();
+
+                 }
+
+                 if(data.departingRooms.length != 0){
+                  $("#depart-date").html(data.departingRooms[0]["depatureDate"]);
+                  for(var i=0; i < data.departingRooms.length; i++){
+                    $('#depart-rooms > tbody:last-child').append('<tr><td>'+data.departingRooms[i]["roomName"]+'</td><td>'+data.departingRooms[i]["roomType"]+'</td><td>'+data.departingRooms[i]["status"]+'</td><td>'+data.departingRooms[i]["remarks"]+'</td><td><input id="check'+data.departingRooms[i]["roomId"]+'" type="checkbox" name="roomId[]" class="roomcheckbox" data-checkbox="icheckbox_square-blue" value="'+data.departingRooms[i]["roomId"]+'"></td></tr>');
+
+
+
+                  }
+
+
+
+
+                }
+
+
+                if(data.arrivingRooms.length != 0){
+                 $("#arrival-date").html(data.arrivingRooms[0]["arrivalDate"]);
+                       // var roomListing = $("#depart-rooms");
+                       
+
+
+                       for(var i=0; i < data.arrivingRooms.length; i++){
+                        $('#arrival-rooms > tbody:last-child').append('<tr><td>'+data.arrivingRooms[i]["roomName"]+'</td><td>'+data.arrivingRooms[i]["roomType"]+'</td><td>'+data.arrivingRooms[i]["status"]+'</td><td>'+data.arrivingRooms[i]["remarks"]+'</td><td><input id="check'+data.arrivingRooms[i]["roomId"]+'" type="checkbox" name="roomId[]" class="roomcheckbox" value="'+data.arrivingRooms[i]["roomId"]+'"></td></tr>');
+
+
+                      }
+                    }
+
+                    $(".roomcheckbox").iCheck({
+                      checkboxClass: 'icheckbox_square-blue',
+                      checkedClass: 'checked',
+                      enabledClass: 'true',
+                    });
+
+                    $('.roomcheckbox').on('ifChecked', function(event){
+                      var roomId = $(this).val();
+
+                      $.get("../frontdesk/get-room-details-byroomid/"+roomId,function(data){
+                        console.log(data);
+
+                        var selectStart = '<select class="form-control" name="discountType'+data.room[0]['id']+'" onchange="selectDiscount(this)" value="'+data.room[0]['id']+'" data-style="white">';
+
+                        for(var i = 0 ; i<data.discounts.length;i++){
+                          if(data.discounts[i]['status'] == 1){
+
+                            if(data.discounts[i]['type'] == 1)
+                              selectStart+='<option value="'+data.discounts[i]['id']+'">'+data.discounts[i]['discountName']+' ('+data.discounts[i]['discountValue'] * 100+'%)</option>';
+
+                            if(data.discounts[i]['type'] == 2)
+                              selectStart+='<option value="'+data.discounts[i]['id']+'">'+data.discounts[i]['discountName']+' (Less '+data.discounts[i]['discountValue']+')</option>';
+
+
+                          }
+
+                        }
+
+                        var discountDropdown = selectStart+"</select>";
+
+
+
+                        $('#room-reserv-table > tbody:last-child').append('<tr id="row'+data.room[0]['id']+'"><td>'+data.room[0]['roomName']+'</td><td>'+data.room[0]['roomType']+'</td><td id="rate'+data.room[0]['id']+'">'+numeral(data.room[0]['room_rate']).format('0,0.00')+'</td><td>'+discountDropdown+'</td><td id="totalRate'+data.room[0]['id']+'">'+numeral(data.room[0]['room_rate']).format('0,0.00')+'</td></tr>');
+
+                        var roomTotal = parseFloat(numeral($("#room-total-charge").html()).format('0.00'));
+
+                        $("#room-total-charge").html(numeral(roomTotal+ data.room[0]['room_rate']).format('0,0.00'));
+
+
+                      });
+                    });
+
+
+                    $('.roomcheckbox').on('ifUnchecked', function(event){
+                      var roomId = $(this).val();
+                      var totalRate = parseFloat(numeral($("#totalRate"+roomId).html()).format('0.00'));
+                      var roomTotal = parseFloat(numeral($("#room-total-charge").html()).format('0.00'));
+                      $("#room-total-charge").html(numeral(roomTotal-totalRate).format('0,0.00')); 
+
+                      $('table#room-reserv-table tr#row'+roomId).remove();
+
+                    });
+
+
+                  }
+                  
+                });
+}); 
+}
+
 
 </script>
 
